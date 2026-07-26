@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  name           String
+  email          String   @unique
+  passwordHash   String
+  telegramChatId String?
+  createdAt      DateTime @default(now())
+
+  assignedTasks Task[]
+}
+
+model Topic {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  tasks Task[]
+}
+
+model Task {
+  id         String   @id @default(cuid())
+  topicId    String
+  title      String
+  notes      String?
+  assigneeId String?
+  done       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  topic    Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  assignee User?     @relation(fields: [assigneeId], references: [id])
+  reminder Reminder?
+}
+
+model Reminder {
+  id     String  @id @default(cuid())
+  taskId String  @unique
+  active Boolean @default(true)
+
+  emailEnabled    Boolean   @default(false)
+  emailTime       String? // "HH:MM", 24h local time
+  emailDaysOfWeek String? // comma-separated 0-6 (Sun-Sat), null = every day
+  emailLastSentAt DateTime?
+
+  telegramEnabled       Boolean   @default(false)
+  telegramIntervalHours Int?
+  telegramLastSentAt    DateTime?
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
